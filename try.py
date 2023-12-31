@@ -19,7 +19,6 @@ def buttonChooseClick():
     global lb
     global fr1
     global label
-    global text_window
     if not folder:
         folder = tkinter.filedialog.askdirectory()
         musics = [folder + '\\' + music
@@ -61,34 +60,31 @@ def play():
         if play_state:
             if len(music_list):
                 pygame.mixer.init()
-                global num
+                global play_num
                 if not pygame.mixer.music.get_busy():
                     next_music = lb.curselection()
                     if next_music == ():
-                        nextMusic = music_list[num]
+                        nextMusic = music_list[play_num]
                         print(nextMusic)
-                        print(num)
+                        print(play_num)
                         pygame.mixer.music.load(nextMusic.encode())
                         # 播放
                         pygame.mixer.music.play(1)
-                        if len(music_list) - 1 == num:
-                            num = 0
+                        if len(music_list) - 1 == play_num:
+                            play_num = 0
                         else:
-                            num = num + 1
-                        netxMusic = nextMusic.split('\\')[1:]
-                        musicName.set('                                      playing......' + ''.join(netxMusic))
-                    else:
-                        num = next_music[0]
-                        nextMusic = music_list[num]
+                            play_num = play_num + 1
+                        play_num = next_music[0]
+                        nextMusic = music_list[play_num]
                         print(nextMusic)
-                        print(num)
+                        print(play_num)
                         pygame.mixer.music.load(nextMusic.encode())
                         # 播放
                         pygame.mixer.music.play(1)
-                        if len(music_list) - 1 == num:
-                            num = 0
+                        if len(music_list) - 1 == play_num:
+                            play_num = 0
                         else:
-                            num = num + 1
+                            play_num = play_num + 1
                         netxMusic = nextMusic.split('\\')[1:]
                 else:
                     time.sleep(0.1)
@@ -160,9 +156,9 @@ def buttonNextClick():
     playing = False
     play_state = False
     pygame.mixer.music.stop()
-    global num
-    if len(music_list) == num:
-        num = 0
+    global play_num
+    if len(music_list) == play_num:
+        play_num = 0
 
     play_state = True
     # 创建线程播放音乐,主线程用来接收用户操作
@@ -222,18 +218,18 @@ def buttonPrevClick():
     pygame.mixer.music.stop()
     #
     # pygame.mixer.quit()
-    global num
+    global play_num
     # num += 1
     # num -= 1
-    if num == 0:
-        num = len(music_list) - 2
+    if play_num == 0:
+        play_num = len(music_list) - 2
         # num -= 1
-    elif num == len(music_list) - 1:
-        num -= 2
+    elif play_num == len(music_list) - 1:
+        play_num -= 2
     else:
-        num -= 2
+        play_num -= 2
         # num -= 1
-    print(num)
+    print(play_num)
 
     playing = True
     play_state = True
@@ -246,18 +242,18 @@ def buttonPrevClick():
 
 
 def vido():
-    global if_
+    global show
     global volume_control
-    if if_:
+    if show:
         volume_control = tk.Frame(root, relief=tk.RAISED, bd=2)
         s = tk.Scale(volume_control, label='音量', from_=0, to=100, orient=tk.VERTICAL,
                      length=250, showvalue=True, tickinterval=25, resolution=1, command=control_voice)
         s.pack(side=tk.LEFT, anchor='nw')
         volume_control.pack(side=tk.BOTTOM, anchor='se')
-        if_ = False
+        show = False
     else:
         volume_control.destroy()
-        if_ = True
+        show = True
 
 
 def setting():
@@ -265,23 +261,43 @@ def setting():
 
 
 def next_lyric_function(file_name):
-    with open(file_name) as f:
-        lyric_text = True
-        number = 0
-        while lyric_text:
-            try:
-                lyric_text = f.readline()
-                lyric_text.strip()
-            except :
-                pass
+    pass
 
-    def start():
-        event.set()
-        t_lyric = threading.Thread(target=lyric)
-        t_lyric.daemon = True
-        t = threading.Thread(target=play)
-        t.daemon = True
-        t.start()
+
+def lyric():
+    time_stamp = time.time()
+    text_window.delete(1.0, tk.END)
+    directory_name = os.path.dirname(music_list[play_num])
+    file_name = os.path.basename(music_list[play_num])
+    filename_without_ext, file_extension = os.path.splitext(file_name)  # 区分文件名和后缀
+    lyric_file_name = directory_name + '/' + filename_without_ext + ".lrc"
+    if os.path.exists(lyric_file_name):
+        with open(lyric_file_name) as f:
+            lyric_text = True
+            number = 0
+            while lyric_text:
+                try:
+                    lyric_text = f.readline()
+                    lyric_text.strip()
+                    if lyric_text[-1] == "]":
+                        text_window.insert('insert', lyric_text)
+                        continue
+                    else:
+                        minute, second = lyric_text[1:9].split(":")
+                        second += int(minute) * 60
+                except:
+                    pass
+    else:
+        text_window.insert('insert', "没有歌词")
+
+
+def start():
+    event.set()
+    t_lyric = threading.Thread(target=lyric)
+    t_lyric.daemon = True
+    t = threading.Thread(target=play)
+    t.daemon = True
+    t.start()
 
 
 if __name__ == '__main__':
@@ -292,14 +308,16 @@ if __name__ == '__main__':
     # root.resizable(False, False)  # 不能拉伸
 
     folder = ''  # 文件夹路径
-    music_list = []
-    num = 0
-    playing = None
-    now_music = ''  # 播放音乐路径
-    if_ = True
-    volume_control = None
+    music_list = []  # 文件夹下的音乐路径
+    play_num = 0  # 当前正在播放音乐的路径
+
+    playing = None  # 是否正在播放
+
+    now_music = ''  # 正在播放音乐路径
+    show = True  # 是否显示音量调整框
+    volume_control = None  # 音量控制
     lb = None
-    play_state = False
+    play_state = False  # 播放状态，决定“播放”按钮的text为“播放”还是“暂停”
 
     # 窗口关闭
     root.protocol('WM_DELETE_WINDOW', closeWindow)
@@ -314,12 +332,6 @@ if __name__ == '__main__':
     buttonPlay.pack(side=tk.LEFT, anchor='nw', fill=tk.BOTH, padx=40, ipadx=10)
     buttonPlay['state'] = 'disabled'
 
-    # # 停止按钮
-    # buttonStop = tk.Button(fr1, text='停止', command=buttonStopClick)
-    # buttonStop.pack(side=tk.LEFT, anchor='nw', fill=tk.BOTH)
-    # buttonStop['state'] = 'disabled'
-
-    # 下一首
     buttonNext = tk.Button(fr1, text='下一首', command=buttonNextClick)
     buttonNext.pack(side=tk.LEFT, anchor='nw', fill=tk.BOTH, padx=50, ipadx=10)
     buttonNext['state'] = 'disabled'
@@ -331,15 +343,9 @@ if __name__ == '__main__':
     b4 = tk.Button(fr1, text="设置", command=setting)
     b4.pack(side=tk.RIGHT, anchor='w', fill=tk.BOTH, ipadx=10)
 
-    # 标签
-    musicName = tk.StringVar(root)
-    labelName = tk.Label(root, textvariable=musicName)
-    labelName.pack(side=tk.TOP, anchor='s')
-
     image = Image.open(r".\lib\python.jpg")
     pyt = ImageTk.PhotoImage(image)
     label = tk.Label(root, image=pyt)
-
     text_window = tk.Text(root, )
 
     buttonChooseClick()

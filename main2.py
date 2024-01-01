@@ -106,6 +106,21 @@ def control_voice(value=50):  # 音量控制
         pass
 
 
+def control_speech(value=0):  # 音量控制
+    """
+    :param value: 0.0-1.0
+    """
+    try:
+        global config
+        config["volume_num"] = value
+        pygame.mixer.music.set_volume(float(value) / 100)
+    except pygame.error:  # 未播放音乐的情况
+        pass
+
+
+def set_speech():
+    pass
+
 def buttonPrevClick():  # 上一首
     pygame.mixer.music.pause()
     stop()
@@ -219,11 +234,6 @@ if __name__ == '__main__':
     buttonNext['state'] = 'disabled'
     # 音量
     volume = tkinter.Scale(fr1, from_=0, to=100, orient=tkinter.HORIZONTAL, variable=10, resolution=10, showvalue=True, width=5,
-                           length=240, tickinterval=2, command=control_voice)
-    volume.pack(side=tk.LEFT, anchor='nw', fill=tk.BOTH, padx=60, ipadx=10)
-    # 进度
-    volume = tkinter.Scale(fr1, from_=0, to=100, orient=tkinter.HORIZONTAL, variable=10, resolution=10, showvalue=True,
-                           width=5,
                            length=240, tickinterval=2, command=control_voice)
     volume.pack(side=tk.LEFT, anchor='nw', fill=tk.BOTH, padx=60, ipadx=10)
     # 设置

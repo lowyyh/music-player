@@ -220,11 +220,6 @@ if __name__ == '__main__':
     volume = tkinter.Scale(fr1, from_=0, to=100, orient=tkinter.HORIZONTAL, variable=10, resolution=10, showvalue=True, width=5,
                            length=240, tickinterval=2, command=control_voice)
     volume.pack(side=tk.LEFT, anchor='nw', fill=tk.BOTH, padx=60, ipadx=10)
-    # 进度
-    volume = tkinter.Scale(fr1, from_=0, to=100, orient=tkinter.HORIZONTAL, variable=10, resolution=10, showvalue=True,
-                           width=5,
-                           length=240, tickinterval=2, command=control_voice)
-    volume.pack(side=tk.LEFT, anchor='nw', fill=tk.BOTH, padx=60, ipadx=10)
     # 设置
     b4 = tk.Button(fr1, text="设置", command=setting)
     b4.pack(side=tk.RIGHT, anchor='w', fill=tk.BOTH, ipadx=10)

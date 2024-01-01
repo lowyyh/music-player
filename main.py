@@ -1,4 +1,5 @@
 import os
+import json
 import time
 import pygame
 import threading
@@ -8,7 +9,7 @@ from stop import stop_thread
 from PIL import Image, ImageTk
 
 
-def play(event):  # 播放音乐
+def play():  # 播放音乐
     while True:
         while not event.wait():
             time.sleep(0.1)
@@ -45,13 +46,6 @@ def buttonPlayClick():  # 点击播放后的事件
     buttonPrev['state'] = 'normal'
     if pause_resume.get() == '播放':  # 只在第一次播放执行
         pause_resume.set('暂停')
-        global folder
-
-        if not folder:
-            folder = tkinter.filedialog.askdirectory()
-
-        if not folder:
-            return
 
         # 创建线程来播放音乐和显示歌词，主线程负责接收用户操作
         event.set()
@@ -82,21 +76,33 @@ def buttonNextClick():  # 下一首
 
 
 def closeWindow():  # 关闭窗口
-    stop()
+    try :
+        stop()
+    except AttributeError:  # 没有创建线程(即没有开始播放)的情况
+        exit(0)
+    with open(r'.\config\config.json', encoding='utf-8') as f:
+        data = json.loads(f.read())
+    data["volume_num"] = config["volume_num"]
+    data["folder"] = config["folder"]
+    json_data = json.dumps(data, indent=2, ensure_ascii=False)
+    with open(r'.\config\config.json', 'w', encoding='utf-8') as f:
+        f.write(json_data)
     time.sleep(0.1)
     pygame.mixer.music.stop()
     pygame.mixer.quit()
     root.destroy()
 
 
-def control_voice(value=0.5):
+def control_voice(value=50):  # 音量控制
     """
-    音量控制
     :param value: 0.0-1.0
     """
-    global volume_num
-    volume_num = float(int(value) / 100)
-    pygame.mixer.music.set_volume(volume_num)
+    try:
+        global config
+        config["volume_num"] = value
+        pygame.mixer.music.set_volume(float(value) / 100)
+    except pygame.error:  # 未播放音乐的情况
+        pass
 
 
 def buttonPrevClick():  # 上一首
@@ -116,27 +122,11 @@ def buttonPrevClick():  # 上一首
     event.set()
 
 
-def vido():  # 调整音量
-    global show
-    global volume_control
-    if show:
-        volume_control = tk.Frame(root, relief=tk.RAISED, bd=2)
-        s = tk.Scale(volume_control, label='音量', from_=100, to=0, variable=10, resolution=10, orient=tk.VERTICAL, length=250, showvalue=True, tickinterval=25,
-                     command=control_voice)
-        s.set(volume_num * 100)
-        s.pack(side=tk.LEFT, anchor='nw')
-        volume_control.pack(side=tk.BOTTOM, anchor='se')
-        show = False
-    else:
-        volume_control.destroy()
-        show = True
-
-
 def setting():  # 设置
     pass
 
 
-def lyric(event):  # 显示歌词
+def lyric():  # 显示歌词
     time_last = 0
     text_window.delete(1.0, tk.END)
     directory_name = os.path.dirname(music_list[play_num])
@@ -165,17 +155,17 @@ def lyric(event):  # 显示歌词
             else:
                 break
         exit()
-    else :
+    else:
         text_window.insert('insert', "没有歌词")
 
 
 def start():
     global t_lyric
     global t_play
-    t_lyric = threading.Thread(target=lyric, args=(event,))
+    t_lyric = threading.Thread(target=lyric)
     t_lyric.daemon = True
     t_lyric.start()
-    t_play = threading.Thread(target=play, args=(event,))
+    t_play = threading.Thread(target=play)
     t_play.daemon = True
     t_play.start()
 
@@ -197,21 +187,17 @@ if __name__ == '__main__':
     event = threading.Event()
     root = tk.Tk()
     root.title('音乐播放器')
-    root.geometry('1000x500')
+    # root.geometry('0x0')
     # root.resizable(False, False)  # 不能拉伸
 
     t_lyric = None
     t_play = None
-    folder = ''  # 文件夹路径
 
     music_list = []  # 文件夹下的音乐路径
-    play_num = 0  # 当前正在播放音乐的路径
-
-    now_music = ''  # 正在播放音乐路径
+    play_num = 0  # 当前正在播放音乐的位置
+    config = {"volume_num": 50, "image_path": './lib/python.jpg', "folder": ''}
+    now_music = ''
     lb = None
-    show = True  # 是否显示音量调整框
-    volume_control = None  # 音量控制
-    volume_num = 0.5
 
     # 窗口关闭
     root.protocol('WM_DELETE_WINDOW', closeWindow)
@@ -231,35 +217,49 @@ if __name__ == '__main__':
     buttonNext.pack(side=tk.LEFT, anchor='nw', fill=tk.BOTH, padx=50, ipadx=10)
     buttonNext['state'] = 'disabled'
     # 音量
-    b4 = tk.Button(fr1, text="音量", command=vido)
-    b4.pack(side=tk.LEFT, anchor='nw', fill=tk.BOTH, padx=25, ipadx=10)
+    volume = tkinter.Scale(fr1, from_=0, to=100, orient=tkinter.HORIZONTAL, variable=10, resolution=10, showvalue=True, width=5,
+                           length=240, tickinterval=2, command=control_voice)
+    volume.pack(side=tk.LEFT, anchor='nw', fill=tk.BOTH, padx=60, ipadx=10)
+    # 进度
+    volume = tkinter.Scale(fr1, from_=0, to=100, orient=tkinter.HORIZONTAL, variable=10, resolution=10, showvalue=True,
+                           width=5,
+                           length=240, tickinterval=2, command=control_voice)
+    volume.pack(side=tk.LEFT, anchor='nw', fill=tk.BOTH, padx=60, ipadx=10)
     # 设置
     b4 = tk.Button(fr1, text="设置", command=setting)
     b4.pack(side=tk.RIGHT, anchor='w', fill=tk.BOTH, ipadx=10)
+    # 读取配置文件
+    with open(r'.\config\config.json', "r",encoding='utf-8') as f:
+        data_str = f.read()
+        data = json.loads(data_str)
+    for i in config:
+        if i in data:  # 根据配置文件设置信息
+            config[i] = data[i]
 
-    image = Image.open(r".\lib\python.jpg")
+    volume.set(config["volume_num"])
+    image = Image.open(config["image_path"])
     pyt = ImageTk.PhotoImage(image)
     label = tk.Label(root, image=pyt)
-    text_window = tk.Text(root, )
+    text_window = tk.Text(root)
+    if not config["folder"] or not os.path.exists(config["folder"]):
+        config["folder"] = tkinter.filedialog.askdirectory()
+        if not config["folder"]:
+            exit(0)
+    else:
+        pass
 
-    if not folder:
-        folder = tkinter.filedialog.askdirectory()
-        musics = [folder + '\\' + music for music in os.listdir(folder) if music.endswith(('.mp3', '.wav', '.ogg'))]
-        for i in musics:
-            music_list.append(i.replace('\\', '/'))
+    musics = [config["folder"] + '\\' + music for music in os.listdir(config["folder"]) if music.endswith(('.mp3', '.wav', '.ogg'))]
+    for i in musics:
+        music_list.append(i.replace('\\', '/'))
 
-        var2 = tk.StringVar()
-        var2.set([i.split('/')[-1] for i in music_list])
-        lb = tk.Listbox(root, listvariable=var2)
-        lb.pack(side=tk.LEFT, anchor='e', fill=tk.Y)
-        fr1.pack(side=tk.BOTTOM, fill=tk.X)
-        label.pack(side=tk.TOP, anchor='s', fill=tk.Y)
-        text_window.pack(side=tk.TOP, anchor='s', fill=tk.Y)
+    var2 = tk.StringVar()
+    var2.set([i.split('/')[-1] for i in music_list])
+    lb = tk.Listbox(root, listvariable=var2)
+    lb.pack(side=tk.LEFT, anchor='e', fill=tk.Y)
+    fr1.pack(side=tk.BOTTOM, fill=tk.X)
+    label.pack(side=tk.TOP, anchor='s', fill=tk.Y)
+    text_window.pack(side=tk.TOP, anchor='s', fill=tk.Y)
 
-    if not folder:
-        exit(1)
-
-    playing = True
     # 根据情况禁用和启用相应的按钮
     buttonPlay['state'] = 'normal'
     pause_resume.set('播放')

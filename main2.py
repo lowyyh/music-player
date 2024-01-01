@@ -9,17 +9,11 @@ from stop import stop_thread
 from PIL import Image, ImageTk
 
 
-def play():
-    """
-    播放音乐
-    :return:
-    """
-    # clock = pygame.time.Clock()
+def play(event):  # 播放音乐
     while True:
-        if not event.wait():
+        while not event.wait():
             time.sleep(0.1)
-        elif len(music_list):
-            # clock.tick(60)
+        if len(music_list):
             pygame.mixer.init()
             global play_num
             if not pygame.mixer.music.get_busy():
@@ -47,15 +41,10 @@ def play():
                 time.sleep(0.1)
 
 
-def buttonPlayClick():
-    """
-    点击播放
-    :return:
-    """
+def buttonPlayClick():  # 点击播放后的事件
     buttonNext['state'] = 'normal'
     buttonPrev['state'] = 'normal'
-    # 选择要播放的音乐文件夹
-    if pause_resume.get() == '播放':  # 只执行一次
+    if pause_resume.get() == '播放':  # 只在第一次播放执行
         pause_resume.set('暂停')
         global folder
 
@@ -65,7 +54,7 @@ def buttonPlayClick():
         if not folder:
             return
 
-        # 创建一个线程来播放音乐，当前主线程用来接收用户操作
+        # 创建线程来播放音乐和显示歌词，主线程负责接收用户操作
         event.set()
         start()
 
@@ -80,46 +69,24 @@ def buttonPlayClick():
         event.set()
 
 
-def buttonNextClick():
-    """
-    下一首
-    :return:
-    """
-    stop()
+def buttonNextClick():  # 下一首
     pygame.mixer.music.pause()
+    stop()
     global play_num
     if len(music_list) == play_num:
         play_num = 0
 
-    # 创建线程播放音乐,主线程用来接收用户操作
     start()
+    pygame.mixer.music.unpause()
+    pause_resume.set('暂停')
+    event.set()
 
 
-def closeWindow():
-    """
-    关闭窗口
-    :return:
-    """
-    # 修改变量，结束线程中的循环
-
-    global playing
-    playing = False
-    time.sleep(0.3)
-
-    try:
-
-        # 停止播放，如果已停止，
-
-        # 再次停止时会抛出异常，所以放在异常处理结构中
-
-        pygame.mixer.music.stop()
-
-        pygame.mixer.quit()
-
-    except:
-
-        pass
-
+def closeWindow():  # 关闭窗口
+    stop()
+    time.sleep(0.1)
+    pygame.mixer.music.stop()
+    pygame.mixer.quit()
     root.destroy()
 
 
@@ -127,16 +94,13 @@ def control_voice(value=0.5):
     """
     音量控制
     :param value: 0.0-1.0
-    :return:
     """
-    pygame.mixer.music.set_volume(float(int(value) / 100))
+    global volume_num
+    volume_num = float(int(value) / 100)
+    pygame.mixer.music.set_volume(volume_num)
 
 
-def buttonPrevClick():
-    """
-    上一首
-    :return:
-    """
+def buttonPrevClick():  # 上一首
     pygame.mixer.music.pause()
     stop()
     global play_num
@@ -147,17 +111,20 @@ def buttonPrevClick():
     else:
         play_num -= 2
 
-    # 创建一个线程来播放音乐，当前主线程用来接收用户操作
     start()
+    pygame.mixer.music.unpause()
+    pause_resume.set('暂停')
+    event.set()
 
 
-def vido():
+def vido():  # 调整音量
     global show
     global volume_control
     if show:
         volume_control = tk.Frame(root, relief=tk.RAISED, bd=2)
-        s = tk.Scale(volume_control, label='音量', from_=0, to=100, orient=tk.VERTICAL,
-                     length=250, showvalue=True, tickinterval=25, resolution=1, command=control_voice)
+        s = tk.Scale(volume_control, label='音量', from_=100, to=0, variable=10, resolution=10, orient=tk.VERTICAL, length=250, showvalue=True, tickinterval=25,
+                     command=control_voice)
+        s.set(volume_num * 100)
         s.pack(side=tk.LEFT, anchor='nw')
         volume_control.pack(side=tk.BOTTOM, anchor='se')
         show = False
@@ -166,58 +133,65 @@ def vido():
         show = True
 
 
-def setting():
+def setting():  # 设置
     pass
 
 
-def lyric():
+def lyric(event):  # 显示歌词
     time_last = 0
     text_window.delete(1.0, tk.END)
     directory_name = os.path.dirname(music_list[play_num])
     file_name = os.path.basename(music_list[play_num])
-    filename_without_ext, file_extension = os.path.splitext(file_name)  # 区分文件名和后缀
-    lyric_file_name = directory_name + '/' + filename_without_ext + ".lrc"
+    lyric_file_name = directory_name + '/' + os.path.splitext(file_name)[0] + ".lrc"
     if os.path.exists(lyric_file_name):
-        with open(lyric_file_name) as f:
+        with open(lyric_file_name, encoding="ANSI") as f:
             lyric_list = f.readlines()
         for i in lyric_list:
+            while not event.wait():
+                time.sleep(0.1)
+            text_window.see(tk.END)
             lyric_text = i.strip()
             if lyric_text:
                 if lyric_text[-1] == "]":
-                    text_window.insert('insert', lyric_text+'\n')
+                    text_window.insert('insert', lyric_text + '\n')
                     continue
                 else:
                     minute, second = lyric_text[1:9].split(":")
                     second = int(minute) * 60 + float(second)
                     time.sleep(second - time_last)
-                    text_window.insert('insert', lyric_text[10:]+"\n")
+                    text_window.insert('insert', lyric_text[10:] + "\n")
                     time_last = second
             elif i == "\n":
                 pass
             else:
                 break
         exit()
-    else:
+    else :
         text_window.insert('insert', "没有歌词")
 
 
 def start():
     global t_lyric
     global t_play
-    t_lyric = threading.Thread(target=lyric)
+    t_lyric = threading.Thread(target=lyric, args=(event,))
     t_lyric.daemon = True
     t_lyric.start()
-    t_play = threading.Thread(target=play)
+    t_play = threading.Thread(target=play, args=(event,))
     t_play.daemon = True
     t_play.start()
 
 
-def stop():
+def stop():  # 强制结束线程
+    stop_thread(t_play)
     try:
         stop_thread(t_lyric)
-        stop_thread(t_play)
     except ValueError:  # 线程提前退出
         pass
+    try:
+        pass
+    except ValueError:
+        pass
+    event.set()
 
 
 if __name__ == '__main__':
@@ -238,48 +212,45 @@ if __name__ == '__main__':
     lb = None
     show = True  # 是否显示音量调整框
     volume_control = None  # 音量控制
-
-    play_state = False  # 播放状态，决定“播放”按钮的text为“播放”还是“暂停”
+    volume_num = 0.5
 
     # 窗口关闭
     root.protocol('WM_DELETE_WINDOW', closeWindow)
-    # 播放按钮
+    # 按钮
+    # 上一首
     fr1 = tk.Frame(root, relief=tk.RAISED, bd=5)
     buttonPrev = tk.Button(fr1, text='上一首', command=buttonPrevClick)
     buttonPrev.pack(side=tk.LEFT, anchor='nw', fill=tk.BOTH, padx=50, ipadx=10)
     buttonPrev['state'] = 'disabled'
-
+    # 播放
     pause_resume = tk.StringVar(fr1, value='播放')
     buttonPlay = tk.Button(fr1, textvariable=pause_resume, command=buttonPlayClick)
     buttonPlay.pack(side=tk.LEFT, anchor='nw', fill=tk.BOTH, padx=40, ipadx=10)
     buttonPlay['state'] = 'disabled'
-
+    # 下一首
     buttonNext = tk.Button(fr1, text='下一首', command=buttonNextClick)
     buttonNext.pack(side=tk.LEFT, anchor='nw', fill=tk.BOTH, padx=50, ipadx=10)
     buttonNext['state'] = 'disabled'
-    # 上一首
-
+    # 音量
     b4 = tk.Button(fr1, text="音量", command=vido)
     b4.pack(side=tk.LEFT, anchor='nw', fill=tk.BOTH, padx=25, ipadx=10)
-
+    # 设置
     b4 = tk.Button(fr1, text="设置", command=setting)
     b4.pack(side=tk.RIGHT, anchor='w', fill=tk.BOTH, ipadx=10)
 
     image = Image.open(r".\lib\python.jpg")
     pyt = ImageTk.PhotoImage(image)
     label = tk.Label(root, image=pyt)
-    text_window = tk.Text(root,)
+    text_window = tk.Text(root, )
 
     if not folder:
         folder = tkinter.filedialog.askdirectory()
         musics = [folder + '\\' + music for music in os.listdir(folder) if music.endswith(('.mp3', '.wav', '.ogg'))]
-        ret = []
         for i in musics:
-            ret.append(i.split('\\')[1:])
             music_list.append(i.replace('\\', '/'))
 
         var2 = tk.StringVar()
-        var2.set(ret)
+        var2.set([i.split('/')[-1] for i in music_list])
         lb = tk.Listbox(root, listvariable=var2)
         lb.pack(side=tk.LEFT, anchor='e', fill=tk.Y)
         fr1.pack(side=tk.BOTTOM, fill=tk.X)
@@ -293,5 +264,5 @@ if __name__ == '__main__':
     # 根据情况禁用和启用相应的按钮
     buttonPlay['state'] = 'normal'
     pause_resume.set('播放')
-    # 显示
+
     root.mainloop()

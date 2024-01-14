@@ -4,6 +4,6 @@
 <p>main.py的GUI使用Python标准库tkinter</p>
 <p>main2.py使用ttkbootstrap库</p>
 <p>提示: </p>
-<p>    1.如果要打开自定义的目录, 就删除./temp文件夹或者删除./config.json中的"folder"的值</p>
+<p>    1.如果要打开其他音乐文件夹(或打开单个音乐文件), 请单击左上方的"文件"</p>
 <p>    2.程序读取的歌词文件格式: 音乐文件名(不加后缀名).lrc</p>
 <img src="./README_images/img.png">

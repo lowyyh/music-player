@@ -89,21 +89,20 @@ def buttonPrevClick():  # 上一首
 
 
 def close_window():  # 关闭窗口
+    with open(r'./config/config.json', 'w',encoding='utf-8') as f:
+        f.write('')
+
+    json_data = json.dumps(config, indent=2, ensure_ascii=False)
+    with open(r'./config/config.json', 'w', encoding='utf-8') as f:
+        f.write(json_data)
+    pygame.mixer.music.fadeout(config["fadeout_time"])  # 淡出
+    root.destroy()
+    time.sleep(config["fadeout_time"] / 1000)
     try:
         stop()
     except AttributeError:  # 没有创建线程(即没有开始播放)的情况
         exit(0)
-    with open(r'./config/config.json', encoding='utf-8') as f:
-        data = json.loads(f.read())
-    data["volume_num"] = config["volume_num"]
-    data["folder"] = config["folder"]
-    json_data = json.dumps(data, indent=2, ensure_ascii=False)
-    with open(r'./config/config.json', 'w', encoding='utf-8') as f:
-        f.write(json_data)
-    time.sleep(0.1)
-    pygame.mixer.music.stop()
     pygame.mixer.quit()
-    root.destroy()
 
 
 def control_voice(value=50):  # 音量控制
@@ -118,8 +117,35 @@ def control_voice(value=50):  # 音量控制
         pass
 
 
-def setting():  # 设置
-    pass
+class Setting:  # 设置
+    def __init__(self):
+        self.setting_window = None
+        self.set_fadeout_time_window = None
+
+    def get_value(self):
+        try:
+            value = int(self.e.get())
+            config["fadeout_time"] = value  # 其实我一直在努力，只是你不知道罢了
+            self.set_fadeout_time_window.destroy()
+        except ValueError:
+            tk.messagebox.showerror(message="请输入整数!")
+
+    def set_fadeout_time(self):
+        self.set_fadeout_time_window = tk.Toplevel(self.setting_window)
+        self.e = tk.Entry(self.set_fadeout_time_window)
+        tk.Label(self.set_fadeout_time_window, text="淡出时间(毫秒)").pack(side=tk.TOP)
+        tk.Button(self.set_fadeout_time_window, text="确定", command=self.get_value).pack(side=tk.BOTTOM)
+        self.e.pack(side=tk.BOTTOM)
+        self.set_fadeout_time_window.mainloop()
+
+    def main(self):
+        self.setting_window = tk.Toplevel(root)
+        self.setting_window.title('setting')
+
+        btn1 = tk.Button(self.setting_window, text="淡出时间", command=self.set_fadeout_time)
+
+        btn1.grid(row=0, column=0)
+        self.setting_window.mainloop()
 
 
 def move(value=-1):
@@ -246,6 +272,7 @@ def open_folder(cover=False):
 if __name__ == '__main__':
     root = tk.Tk()
     pygame.mixer.init()
+    setting = Setting()
 
     root.title('音乐播放器')
     # root.geometry('0x0')
@@ -258,7 +285,7 @@ if __name__ == '__main__':
     music_list = []  # 文件夹下的音乐路径
     play_num = 0  # 当前正在播放音乐的位置
     music_length = 0
-    config = {"volume_num": 50, "image_path": './lib/python.jpg', "folder": ''}
+    config = {"volume_num": 50, "image_path": './lib/python.jpg', "folder": '', "fadeout_time": 600}
     now_music = ''
     lb = None
     event = threading.Event()
@@ -267,15 +294,19 @@ if __name__ == '__main__':
     # 按钮
     fr1 = tk.Frame(root, relief=tk.RAISED, bd=0)
     # 进度
-    speech = tkinter.Scale(fr1, from_=0, to=100, orient=tk.HORIZONTAL, variable=1, resolution=1, showvalue=True,
-                           width=5,
-                           length=300, tickinterval=0, command=move)
-    speech.grid(row=0, column=0, sticky="ew", padx=20, pady=5)
+    speech_lf = tk.LabelFrame(fr1, text="进度")
+    speech = tk.Scale(speech_lf, from_=0, to=100, orient=tk.HORIZONTAL, variable=1, resolution=1, showvalue=True,
+                      width=5,
+                      length=300, tickinterval=0, command=move)
+    speech.pack()
+    speech_lf.grid(row=0, column=0, sticky="ew", padx=20, pady=5)
     # 音量
-    volume = tkinter.Scale(fr1, from_=0, to=100, orient=tkinter.HORIZONTAL, variable=10, resolution=10, showvalue=True,
-                           width=5,
-                           length=300, tickinterval=2, command=control_voice)
-    volume.grid(row=0, column=1, sticky="ew", padx=5, pady=5)
+    volume_lf = tk.LabelFrame(fr1, text="音量")
+    volume = tk.Scale(volume_lf, from_=0, to=100, orient=tkinter.HORIZONTAL, variable=10, resolution=10, showvalue=True,
+                      width=5,
+                      length=300, tickinterval=2, command=control_voice)
+    volume.pack()
+    volume_lf.grid(row=0, column=1, sticky="ew", padx=5, pady=5)
 
     fr2 = tk.Frame(root, relief=tk.RAISED, bd=0)
     # 上一首
@@ -292,7 +323,7 @@ if __name__ == '__main__':
     buttonNext.grid(row=0, column=2, sticky="ew", padx=60, pady=5)
     buttonNext['state'] = 'disabled'
     # 设置
-    b4 = tk.Button(fr2, text=" 设 置 ", command=setting)
+    b4 = tk.Button(fr2, text=" 设 置 ", command=setting.main)
     b4.grid(row=0, column=3, sticky="ew", padx=60, pady=5)
     # 读取配置文件
     with open(r'./config/config.json', "r", encoding='utf-8') as f:
@@ -302,7 +333,8 @@ if __name__ == '__main__':
         if i in data:  # 根据配置文件设置信息
             config[i] = data[i]
 
-    volume.set(config["volume_num"])
+    volume.set(int(config["volume_num"]))
+    control_voice(int(config["volume_num"]))
     image = Image.open(config["image_path"])
     pyt = ImageTk.PhotoImage(image)
     label = tk.Label(root, image=pyt)
@@ -334,11 +366,12 @@ if __name__ == '__main__':
     lb = tk.Listbox(fr4, listvariable=var2, yscrollcommand=sc.set)
     lb.pack(side=tkinter.RIGHT, fill=tk.Y)
     sc.config(command=lb.yview)
+
     # 菜单
     menubar = tk.Menu(root, tearoff=0)
     file_menubar = tk.Menu(menubar, tearoff=0)
     folder_menubar = tk.Menu(file_menubar, tearoff=0)
-
+    # 文件
     menubar.add_cascade(label='文件', menu=file_menubar)
     file_menubar.add_command(label='打开文件', command=open_file)  # 打开单个音乐文件
     file_menubar.add_cascade(label='打开文件夹', menu=folder_menubar)  # 打开音乐文件夹
@@ -349,7 +382,7 @@ if __name__ == '__main__':
     file_menubar.add_separator()
     file_menubar.add_command(label='退出', command=close_window)
     # 实例化
-    fr4.pack(side=tk.LEFT,anchor='e', fill=tk.Y)
+    fr4.pack(side=tk.LEFT, anchor='e', fill=tk.Y)
     fr2.pack(side=tk.BOTTOM, fill=tk.X)
     fr1.pack(side=tk.BOTTOM, fill=tk.X)
     label.pack(side=tk.TOP, anchor='s', fill=tk.Y)

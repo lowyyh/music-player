@@ -1,5 +1,6 @@
 {
-  "volume_num": "70",
+  "volume_num": "50",
   "image_path": "./lib/python.jpg",
-  "folder": "./temp"
+  "folder": "./temp",
+  "fadeout_time": 600
 }

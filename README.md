@@ -6,4 +6,4 @@
 <p>提示: </p>
 <p>    1.如果要打开其他音乐文件夹(或打开单个音乐文件), 请单击左上方的"文件"</p>
 <p>    2.程序读取的歌词文件格式: 音乐文件名(不加后缀名).lrc</p>
-<img src="./README_images/img.png">
+<img src="https://gitee.com/lowyyh/own-images/raw/master/img.png">

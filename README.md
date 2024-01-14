@@ -23,7 +23,7 @@ main2.py使用ttkbootstrap库
 
 ## linux(以kali示范)
 
-![Linux](https://gitee.com/lowyyh/own-images/blob/master/img2.png)
+![Linux](https://gitee.com/lowyyh/own-images/raw/master/img2.png)
 
 # 2.安装
 ## 1.克隆仓库

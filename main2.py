@@ -94,12 +94,12 @@ def close_window():  # 关闭窗口
         stop()
     except AttributeError:  # 没有创建线程(即没有开始播放)的情况
         exit(0)
-    with open(r'.\config\config.json', encoding='utf-8') as f:
+    with open(r'./config/config.json', encoding='utf-8') as f:
         data = json.loads(f.read())
     data["volume_num"] = config["volume_num"]
     data["folder"] = config["folder"]
     json_data = json.dumps(data, indent=2, ensure_ascii=False)
-    with open(r'.\config\config.json', 'w', encoding='utf-8') as f:
+    with open(r'./config/config.json', 'w', encoding='utf-8') as f:
         f.write(json_data)
     time.sleep(0.1)
     pygame.mixer.music.stop()
@@ -152,7 +152,7 @@ def lyric(play_num):  # 显示歌词
     file_name = os.path.basename(music_list[play_num])
     lyric_file_name = directory_name + '/' + os.path.splitext(file_name)[0] + ".lrc"
     if os.path.exists(lyric_file_name):
-        with open(lyric_file_name, encoding="ANSI") as f:
+        with open(lyric_file_name, encoding="gbk") as f:
             lyric_list = f.readlines()
         for i in lyric_list:
             while not event.wait():
@@ -296,7 +296,7 @@ if __name__ == '__main__':
     b4 = tk.Button(fr2, text=" 设 置 ", command=setting)
     b4.grid(row=0, column=3, sticky="ew", padx=60, pady=5)
     # 读取配置文件
-    with open(r'.\config\config.json', "r", encoding='utf-8') as f:
+    with open(r'./config/config.json', "r", encoding='utf-8') as f:
         data_str = f.read()
         data = json.loads(data_str)
     for i in config:

@@ -1,3 +1,16 @@
+"""
+Copyright (c) 2024 杨云皓
+音乐播放器 is licensed under Mulan PSL v2.
+You can use this software according to the terms and conditions of the Mulan PSL v2.
+You may obtain a copy of Mulan PSL v2 at:
+         http://license.coscl.org.cn/MulanPSL2
+THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+See the Mulan PSL v2 for more details.
+
+部分代码来源于 https://blog.csdn.net/m0_48405781/article/details/122947011?ops_request_misc=%257B%2522request%255Fid%2522%253A%2522170572071416800227473523%2522%252C%2522scm%2522%253A%252220140713.130102334..%2522%257D&request_id=170572071416800227473523&biz_id=0&utm_medium=distribute.pc_search_result.none-task-blog-2~all~top_click~default-2-122947011-null-null.142^v99^pc_search_result_base4&utm_term=Python%E5%AE%9E%E7%8E%B0%E9%9F%B3%E4%B9%90%E6%92%AD%E6%94%BE%E5%99%A8&spm=1018.2226.3001.4187
+"""
 import os
 import json
 import time
@@ -20,7 +33,11 @@ def play():  # 播放音乐
             global music_length
             if not pygame.mixer.music.get_busy():
                 nextMusic = music_list[play_num]
-                music_length = pygame.mixer.Sound(nextMusic).get_length()
+                print(nextMusic)
+                try:
+                    music_length = pygame.mixer.Sound(nextMusic).get_length()  # FileNotFoundError
+                except:
+                    music_length = 0
                 pygame.mixer.music.load(nextMusic)
                 # 播放
                 pygame.mixer.music.play(1)

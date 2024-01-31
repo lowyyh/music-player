@@ -1,6 +1,7 @@
 {
-  "volume_num": "50",
+  "volume_num": "100",
   "image_path": "./lib/python.jpg",
-  "folder": "./temp",
-  "fadeout_time": 600
+  "folder": "D:/desktop/programme/GUI项目/音乐播放器/temp",
+  "fadeout_time": 600,
+  "music_list": []
 }

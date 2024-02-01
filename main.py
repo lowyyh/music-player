@@ -18,8 +18,13 @@ import pygame
 import threading
 import tkinter as tk
 import tkinter.filedialog
-from lib.stop import stop_thread
 from PIL import Image, ImageTk
+from lib.stop import stop_thread
+
+try:
+    from fuzzywuzzy import process
+except ModuleNotFoundError:
+    pass
 
 
 def play():  # 播放音乐
@@ -106,15 +111,16 @@ def buttonPrevClick():  # 上一首
 
 
 def close_window():  # 关闭窗口
-    with open(r'./config/config.json', 'w',encoding='utf-8') as f:
+    with open(r'./config/config.json', 'w', encoding='utf-8') as f:
         f.write('')
 
     json_data = json.dumps(config, indent=2, ensure_ascii=False)
     with open(r'./config/config.json', 'w', encoding='utf-8') as f:
         f.write(json_data)
-    pygame.mixer.music.fadeout(config["fadeout_time"])  # 淡出
     root.destroy()
-    time.sleep(config["fadeout_time"] / 1000)
+    if pygame.mixer.music.get_busy():
+        pygame.mixer.music.fadeout(config["fadeout_time"])  # 淡出
+        time.sleep(config["fadeout_time"] / 1000)
     try:
         stop()
     except AttributeError:  # 没有创建线程(即没有开始播放)的情况
@@ -244,9 +250,8 @@ def stop():  # 强制结束线程
 def open_file():
     global play_num
     file_types = [("Music file", "*.mp3")]
-    path = tk.filedialog.askopenfilename(filetypes=file_types).replace('\\', '/')
 
-    if not path:
+    if not (path := tk.filedialog.askopenfilename(filetypes=file_types).replace('\\', '/')):
         return
 
     if path in music_list:
@@ -271,29 +276,89 @@ def open_folder(cover=False):
         return
     elif cover:
         config["folder"] = folder
-        music_list = []
-        play_num = 0
-        musics = musics = [config["folder"] + '\\' + music for music in os.listdir(config["folder"]) if
-                           music.endswith(('.mp3', '.wav', '.ogg'))]
-        music_list.extend([i.replace('\\', '/') for i in musics])
+        music_list = []  # 重置音乐播放列表
+        play_num = 0  # 重置播放位置
+        list_music()
         var2.set([i.split('/')[-1] for i in music_list])
     else:
-        musics = [folder + '\\' + music for music in os.listdir(folder) if
-                  music.endswith(('.mp3', '.wav', '.ogg'))]
-        music_list.extend([i.replace('\\', '/') for i in musics])
+        list_music()
         var2.set([i.split('/')[-1] for i in music_list])
         if play_num == 0 and pygame.mixer.music.get_busy():
             play_num = 1
 
 
+def list_music():
+    global music_list
+    try:
+        musics = [config["folder"] + '\\' + music for music in os.listdir(config["folder"]) if
+                  music.endswith(('.mp3', '.wav', '.ogg'))]
+    except FileNotFoundError:
+        return
+
+    music_list.extend([i.replace('\\', '/') for i in musics])
+
+
+def search():
+    def _exit():
+        search_window.destroy()
+
+    def not_fuzzywuzzy():
+        pass
+
+    def have_fuzzywuzzy(value: str):
+        l = lb.get(0, tk.END)
+        matches = process.extract(value, l, limit=len(l))  # 列出所有值的匹配度
+        search_var.set([i[0] for i2 in matches if (i := i2)[1] > 20])  # 列出匹配度大于20的项
+
+    def get_str():
+        have_fuzzywuzzy(search_entry.get())
+
+    def Press_the_button_Select1():
+        if tmp := search_var.get():
+            pass
+        return
+
+    def Press_the_button_Select2():
+        if tmp := search_var.get():
+            pass
+        return
+    
+    search_window = tk.Toplevel(root)
+    search_window.protocol('WM_DELETE_WINDOW', _exit)
+    search_window.title('search')
+    Select_fr = tk.Frame(search_window)
+    search_entry = tk.Entry(search_window)
+    search_btn = tk.Button(search_window, text="搜索", command=get_str)
+    Select1 = tk.Button(Select_fr, text="下一个播放", command=Press_the_button_Select1)
+    Select2 = tk.Button(Select_fr, text="现在 播放", command=Press_the_button_Select2)
+    search_var = tk.StringVar()
+
+    search_fr = tk.Frame(search_window)
+    search_sc = tkinter.Scrollbar(search_fr)
+    search_lb = tk.Listbox(search_fr, listvariable=search_var, yscrollcommand=sc.set)
+    search_sc.config(command=lb.yview)
+    Select1.grid(row=0, column=0)
+    Select2.grid(row=0, column=1)
+
+    search_sc.pack(side=tkinter.LEFT, fill=tkinter.Y)
+    search_lb.pack(side=tkinter.RIGHT, fill=tk.Y)
+
+    search_entry.pack(side=tk.TOP)
+    Select_fr.pack(side=tk.BOTTOM)
+    search_fr.pack(side=tk.BOTTOM)
+    search_btn.pack(side=tk.BOTTOM)
+
+
+# 主程序
 if __name__ == '__main__':
     root = tk.Tk()
+    # root['background'] = '#6175d6'
     pygame.mixer.init()
     setting = Setting()
 
     root.title('音乐播放器')
     # root.geometry('0x0')
-    # root.resizable(False, False)  # 不能拉伸
+    root.resizable(False, False)  # 不能拉伸
 
     t_lyric = None
     t_play = None
@@ -302,7 +367,7 @@ if __name__ == '__main__':
     music_list = []  # 文件夹下的音乐路径
     play_num = 0  # 当前正在播放音乐的位置
     music_length = 0
-    config = {"volume_num": 50, "image_path": './lib/python.jpg', "folder": '', "fadeout_time": 600}
+    config = {"volume_num": 50, "image_path": './lib/python.jpg', "folder": '', "fadeout_time": 600, "music_list": []}
     now_music = ''
     lb = None
     event = threading.Event()
@@ -355,16 +420,16 @@ if __name__ == '__main__':
     image = Image.open(config["image_path"])
     pyt = ImageTk.PhotoImage(image)
     label = tk.Label(root, image=pyt)
-    if not config["folder"] or not os.path.exists(config["folder"]):
-        config["folder"] = tkinter.filedialog.askdirectory()
-        if not config["folder"]:
-            exit(0)
-    else:
+    if config["music_list"]:
         pass
-
-    musics = [config["folder"] + '\\' + music for music in os.listdir(config["folder"]) if
-              music.endswith(('.mp3', '.wav', '.ogg'))]
-    music_list.extend([i.replace('\\', '/') for i in musics])
+    elif not config["folder"] or not os.path.exists(config["folder"]):
+        # print(tkinter.filedialog.askdirectory())
+        if not (folder := tkinter.filedialog.askdirectory()):
+            exit()
+        config["folder"] = folder
+        list_music()
+    else:
+        list_music()
 
     var2 = tk.StringVar()
     var2.set([i.split('/')[-1] for i in music_list])
@@ -388,8 +453,12 @@ if __name__ == '__main__':
     menubar = tk.Menu(root, tearoff=0)
     file_menubar = tk.Menu(menubar, tearoff=0)
     folder_menubar = tk.Menu(file_menubar, tearoff=0)
+    search_menubar = tk.Menu(menubar, tearoff=0)
     # 文件
     menubar.add_cascade(label='文件', menu=file_menubar)
+    # menubar.add_cascade(image="./lib/tmp.png", menu=search_menubar)
+    # menubar.add_cascade(label="搜索", menu=search_menubar)
+    menubar.add_command(label="搜索", command=search)
     file_menubar.add_command(label='打开文件', command=open_file)  # 打开单个音乐文件
     file_menubar.add_cascade(label='打开文件夹', menu=folder_menubar)  # 打开音乐文件夹
     # 单击打开文件夹

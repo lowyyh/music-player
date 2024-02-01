@@ -1,11 +1,3 @@
-<!--
- * @Author: lowyyh lowyyh.com@outlook.com
- * @Date: 2024-01-06 10:54:39
- * @LastEditors: lowyyh lowyyh.com@outlook.com
- * @LastEditTime: 2024-01-14 17:19:10
- * @FilePath: \undefinedd:\desktop\programme\GUI项目\音乐播放器\README.md
- * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
--->
 # 1.简介
 这是一款基于Python的简易音乐播放器, 使用pygame库实现播放音乐
 
@@ -20,11 +12,12 @@ main2.py使用ttkbootstrap库
 ## Windows
 
 ![Windows](https://gitee.com/lowyyh/own-images/raw/master/img.png)
+[//]: # (![Windows]&#40;https://github.com/lowyyh/own-images/blob/master/img.png?raw=true&#41;)
 
 ## linux(以kali示范)
 
 ![Linux](https://gitee.com/lowyyh/own-images/raw/master/img2.png)
-
+[//]: # (![Linux]&#40;https://github.com/lowyyh/own-images/blob/master/img2.png?raw=true&#41;)
 # 2.安装
 ## 1.克隆仓库
 
@@ -65,7 +58,7 @@ pip3 install pygame
 pip3 install pygame-ce
 ```
 ### Windows
-```cmd
+```bash
 pip install pillow
 # 标准版
 pip install pygame
@@ -78,3 +71,5 @@ pip install pygame-ce
     1.如果要打开其他音乐文件夹(或打开单个音乐文件), 请单击左上方的"文件"
 
     2.程序读取的歌词文件格式: 音乐文件名(不加后缀名).lrc
+
+    3.python版本 >= 3.8(程序中用到了':='，动手能力好的可以自行修改)

@@ -11,16 +11,20 @@ See the Mulan PSL v2 for more details.
 
 部分代码来源于 https://blog.csdn.net/m0_48405781/article/details/122947011?ops_request_misc=%257B%2522request%255Fid%2522%253A%2522170572071416800227473523%2522%252C%2522scm%2522%253A%252220140713.130102334..%2522%257D&request_id=170572071416800227473523&biz_id=0&utm_medium=distribute.pc_search_result.none-task-blog-2~all~top_click~default-2-122947011-null-null.142^v99^pc_search_result_base4&utm_term=Python%E5%AE%9E%E7%8E%B0%E9%9F%B3%E4%B9%90%E6%92%AD%E6%94%BE%E5%99%A8&spm=1018.2226.3001.4187
 """
+import tkinter as tk
+from threading import Thread
+
+# loading_th = Thread(target=load)
+# loading_th.start()
 import os
 import json
 import time
 import pygame
-import threading
-import tkinter as tk
 import tkinter.filedialog
-from PIL import Image, ImageTk
+from threading import Event
 from lib.stop import stop_thread
 
+# stop_thread(loading_th, KeyboardInterrupt)
 try:
     from fuzzywuzzy import process
 except ModuleNotFoundError:
@@ -47,7 +51,7 @@ def play():  # 播放音乐
                 # 播放
                 pygame.mixer.music.play(1)
 
-                t_lyric = threading.Thread(target=lyric, args=(play_num,))
+                t_lyric = Thread(target=lyric, args=(play_num,))
                 t_lyric.daemon = True
                 t_lyric.start()
 
@@ -62,21 +66,25 @@ def play():  # 播放音乐
 def buttonPlayClick():  # 点击播放后的事件
     buttonNext['state'] = 'normal'
     buttonPrev['state'] = 'normal'
-    if pause_resume.get() == '播 放':  # 只在第一次播放执行
-        pause_resume.set('暂 停')
+    global player_state
+    if player_state is 0:  # 只在第一次播放执行 False == 0 为True，但 False is 0 为False
+        buttonPlay.config(image=pause_image)
+        player_state = True  # 表示正在播放
 
         # 创建线程来播放音乐和显示歌词，主线程负责接收用户操作
         event.set()
         start()
 
-    elif pause_resume.get() == '暂 停':
+    elif player_state:  # 正在播放
         pygame.mixer.music.pause()
-        pause_resume.set('继 续')
+        buttonPlay.config(image=play_image)
+        player_state = False
         event.clear()
 
-    elif pause_resume.get() == '继 续':
+    elif not player_state:  # 恢复播放
         pygame.mixer.music.unpause()
-        pause_resume.set('暂 停')
+        buttonPlay.config(image=pause_image)
+        player_state = True
         event.set()
 
 
@@ -89,7 +97,7 @@ def buttonNextClick():  # 下一首
 
     start()
     pygame.mixer.music.unpause()
-    pause_resume.set('暂 停')
+    buttonPlay.config(image=pause_image)
     event.set()
 
 
@@ -106,7 +114,7 @@ def buttonPrevClick():  # 上一首
 
     start()
     pygame.mixer.music.unpause()
-    pause_resume.set('暂 停')
+    buttonPlay.config(image=pause_image)
     event.set()
 
 
@@ -230,10 +238,10 @@ def start():
     global t_play
     global t_music
 
-    t_play = threading.Thread(target=play)
+    t_play = Thread(target=play)
     t_play.daemon = True
 
-    t_music = threading.Thread(target=move2)
+    t_music = Thread(target=move2)
     t_music.daemon = True
 
     t_play.start()
@@ -264,7 +272,6 @@ def open_file():
 
         music_list.insert(play_num, path)
         var2.set([i.split('/')[-1] for i in music_list])
-        root.update()
 
 
 def open_folder(cover=False):
@@ -314,15 +321,35 @@ def search():
         have_fuzzywuzzy(search_entry.get())
 
     def Press_the_button_Select1():
-        if tmp := search_var.get():
-            pass
+        if tmp := search_lb.curselection():
+            global play_num
+            global music_list
+            l = list(lb.get(0, tk.END))
+            if not pygame.mixer.music.get_busy():
+                play_num = 0
+            elif play_num == 0:
+                play_num = len(music_list)
+
+            remove_value = search_lb.get(tmp[0])
+            music_list.insert(play_num, music_list.pop(l.index(remove_value)))
+            l.remove(remove_value)
+            l.insert(play_num, search_lb.get(tmp[0]))
+
+            var2.set(l)
+            root.update()
         return
 
     def Press_the_button_Select2():
-        if tmp := search_var.get():
-            pass
+        if tmp := search_lb.curselection():
+            global play_num
+            key = search_lb.get(tmp[0])
+            play_num = list(lb.get(0, tk.END)).index(key)
+            if player_state is 0:
+                buttonPlayClick()
+            else:
+                buttonNextClick()
         return
-    
+
     search_window = tk.Toplevel(root)
     search_window.protocol('WM_DELETE_WINDOW', _exit)
     search_window.title('search')
@@ -349,28 +376,47 @@ def search():
     search_btn.pack(side=tk.BOTTOM)
 
 
+def load():
+    loading = tk.Tk()
+    try:
+        p = tk.Label(loading, text="正在加载必要库与图片、配置")
+        p.pack()
+        loading.mainloop()
+    except KeyboardInterrupt:
+        loading.destroy()
+
+
 # 主程序
 if __name__ == '__main__':
     root = tk.Tk()
+    # 加载图片
+    play_image = tk.Image("photo", master=root, file="./lib/play.png")
+    pause_image = tk.Image("photo", master=root, file="./lib/pause.png")
+    go_start_image = tk.Image("photo", master=root, file="./lib/go-start.png")
+    go_end_image = tk.Image("photo", master=root, file="./lib/go-end.png")
+    setting_image = tk.Image("photo", master=root, file="./lib/setting.png")
+    pyt = tk.Image("photo", master=root, file="./lib/python.png")
     # root['background'] = '#6175d6'
+    # 初始化mixer
     pygame.mixer.init()
     setting = Setting()
 
     root.title('音乐播放器')
     # root.geometry('0x0')
     root.resizable(False, False)  # 不能拉伸
-
+    # 定义变量
     t_lyric = None
+    player_state = 0
     t_play = None
     t_music = None
-
     music_list = []  # 文件夹下的音乐路径
     play_num = 0  # 当前正在播放音乐的位置
     music_length = 0
-    config = {"volume_num": 50, "image_path": './lib/python.jpg', "folder": '', "fadeout_time": 600, "music_list": []}
+    config = {"volume_num": 50, "folder": '', "fadeout_time": 600, "music_list": []}
     now_music = ''
     lb = None
-    event = threading.Event()
+
+    event = Event()
     # 窗口关闭
     root.protocol('WM_DELETE_WINDOW', close_window)
     # 按钮
@@ -392,20 +438,19 @@ if __name__ == '__main__':
 
     fr2 = tk.Frame(root, relief=tk.RAISED, bd=0)
     # 上一首
-    buttonPrev = tk.Button(fr2, text='上一首', command=buttonPrevClick)
+    buttonPrev = tk.Button(fr2, image=go_start_image, width=60, command=buttonPrevClick)
     buttonPrev.grid(row=0, column=0, sticky="ew", padx=60, pady=5)
     buttonPrev['state'] = 'disabled'
     # 播放
-    pause_resume = tk.StringVar(fr2, value='播 放')
-    buttonPlay = tk.Button(fr2, textvariable=pause_resume, command=buttonPlayClick)
+    buttonPlay = tk.Button(fr2, image=play_image, width=60, command=buttonPlayClick)
     buttonPlay.grid(row=0, column=1, sticky="ew", padx=60, pady=5)
     buttonPlay['state'] = 'disabled'
     # 下一首
-    buttonNext = tk.Button(fr2, text='下一首', command=buttonNextClick)
+    buttonNext = tk.Button(fr2, image=go_end_image, width=60, command=buttonNextClick)
     buttonNext.grid(row=0, column=2, sticky="ew", padx=60, pady=5)
     buttonNext['state'] = 'disabled'
     # 设置
-    b4 = tk.Button(fr2, text=" 设 置 ", command=setting.main)
+    b4 = tk.Button(fr2, image=setting_image, width=60, command=setting.main)
     b4.grid(row=0, column=3, sticky="ew", padx=60, pady=5)
     # 读取配置文件
     with open(r'./config/config.json', "r", encoding='utf-8') as f:
@@ -417,8 +462,6 @@ if __name__ == '__main__':
 
     volume.set(int(config["volume_num"]))
     control_voice(int(config["volume_num"]))
-    image = Image.open(config["image_path"])
-    pyt = ImageTk.PhotoImage(image)
     label = tk.Label(root, image=pyt)
     if config["music_list"]:
         pass
@@ -473,10 +516,8 @@ if __name__ == '__main__':
     fr1.pack(side=tk.BOTTOM, fill=tk.X)
     label.pack(side=tk.TOP, anchor='s', fill=tk.Y)
     fr3.pack(side=tk.TOP, anchor='s', fill=tk.Y)
-
     # 根据情况禁用和启用相应的按钮
     buttonPlay['state'] = 'normal'
-    pause_resume.set('播 放')
 
     root.config(menu=menubar)
     root.mainloop()

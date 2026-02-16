@@ -4,11 +4,7 @@
 This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
 
 # 1.简介
-这是一款基于Python的简易音乐播放器, 使用pygame库实现播放音乐
-
-运行方式很简单, 执行main.py或main2.py
-
-main.py的GUI使用Python标准库tkinter
+这是一款基于Python的简易音乐播放器, 使用pygame库实现播放音乐, tkinter作为GUI
 
 ## 截图
 
@@ -48,11 +44,11 @@ sudo apt-get install python3-pip
 ```
 pip安装依赖
 ```bash
-pip3 install -r .\requirements.txt
+pip3 install -r requirements.txt
 ```
 ### Windows
 ```bash
-pip3 install -r .\requirements.txt
+pip3 install -r requirements.txt
 ```
 
 # 注意:

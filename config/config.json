@@ -1,6 +1,6 @@
 {
-  "volume_num": "50",
-  "image_path": "./lib/python.jpg",
-  "folder": "./temp",
-  "fadeout_time": 600
+  "volume_num": "100",
+  "folder": "D:/KuGou",
+  "fadeout_time": 600,
+  "music_list": []
 }

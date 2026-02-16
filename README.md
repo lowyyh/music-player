@@ -1,3 +1,8 @@
+# music-player
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+## License
+This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
+
 # 1.简介
 这是一款基于Python的简易音乐播放器, 使用pygame库实现播放音乐
 
@@ -5,27 +10,19 @@
 
 main.py的GUI使用Python标准库tkinter
 
-[//]: # (main2.py使用ttkbootstrap库)
-
 ## 截图
 
 ## Windows
 
-![Windows](https://gitee.com/lowyyh/own-images/raw/master/img.png)
-
-[//]: # (![Windows]&#40;https://github.com/lowyyh/own-images/blob/master/img.png?raw=true&#41;)
+![Windows](./document/win.png)
 
 ## linux(以kali示范)
 
-![Linux](https://gitee.com/lowyyh/own-images/raw/master/img2.png)
+![Linux](./document/kali.png)
 
-[//]: # (![Linux]&#40;https://github.com/lowyyh/own-images/blob/master/img2.png?raw=true&#41;)
 # 2.安装
-## 1.克隆仓库
+## 1.克隆仓库并进入目录
 
-```bash
-git clone https://gitee.com/lowyyh/music-player.git
-```
 ## 2.安装第三方库:
 ### linux
 首先安装Python3-tk包
@@ -49,19 +46,13 @@ pip包的安装
 ```bash
 sudo apt-get install python3-pip
 ```
-pip安装pygame库
+pip安装依赖
 ```bash
-# 标准版
-pip3 install pygame
-# 社区版
-pip3 install pygame-ce
+pip3 install -r .\requirements.txt
 ```
 ### Windows
 ```bash
-# 标准版
-pip install pygame
-# 社区版
-pip install pygame-ce
+pip3 install -r .\requirements.txt
 ```
 
 # 注意:
@@ -70,4 +61,6 @@ pip install pygame-ce
 
     2.程序读取的歌词文件格式: 音乐文件名(不加后缀名).lrc
 
-    3.python版本 >= 3.8(程序中用到了':='，动手能力好的可以自行修改)
+    3.python版本 >= 3.8(程序中用到了':=')
+
+    初学作者，有不好的地方还请多多指教

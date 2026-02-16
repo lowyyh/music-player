@@ -1,16 +1,6 @@
-"""
-Copyright (c) 2024 lowyyh
-音乐播放器 is licensed under Mulan PSL v2.
-You can use this software according to the terms and conditions of the Mulan PSL v2.
-You may obtain a copy of Mulan PSL v2 at:
-         http://license.coscl.org.cn/MulanPSL2
-THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
-EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
-MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
-See the Mulan PSL v2 for more details.
+# Copyright (c) 2025 lowyyh
+# SPDX-License-Identifier: MIT
 
-部分代码来源于 https://blog.csdn.net/m0_48405781/article/details/122947011?ops_request_misc=%257B%2522request%255Fid%2522%253A%2522170572071416800227473523%2522%252C%2522scm%2522%253A%252220140713.130102334..%2522%257D&request_id=170572071416800227473523&biz_id=0&utm_medium=distribute.pc_search_result.none-task-blog-2~all~top_click~default-2-122947011-null-null.142^v99^pc_search_result_base4&utm_term=Python%E5%AE%9E%E7%8E%B0%E9%9F%B3%E4%B9%90%E6%92%AD%E6%94%BE%E5%99%A8&spm=1018.2226.3001.4187
-"""
 import tkinter as tk
 from threading import Thread
 
@@ -25,10 +15,7 @@ from threading import Event
 from lib.stop import stop_thread
 
 # stop_thread(loading_th, KeyboardInterrupt)
-try:
-    from fuzzywuzzy import process
-except ModuleNotFoundError:
-    pass
+from fuzzywuzzy import process
 
 
 def play():  # 播放音乐
@@ -63,7 +50,7 @@ def play():  # 播放音乐
                 time.sleep(0.1)
 
 
-def buttonPlayClick():  # 点击播放后的事件
+def button_play_click():  # 点击播放后的事件
     buttonNext['state'] = 'normal'
     buttonPrev['state'] = 'normal'
     global player_state
@@ -88,7 +75,7 @@ def buttonPlayClick():  # 点击播放后的事件
         event.set()
 
 
-def buttonNextClick():  # 下一首
+def button_next_click():  # 下一首
     pygame.mixer.music.pause()
     stop()
     global play_num
@@ -101,7 +88,7 @@ def buttonNextClick():  # 下一首
     event.set()
 
 
-def buttonPrevClick():  # 上一首
+def button_prev_click():  # 上一首
     pygame.mixer.music.pause()
     stop()
     global play_num
@@ -138,7 +125,7 @@ def close_window():  # 关闭窗口
 
 def control_voice(value=50):  # 音量控制
     """
-    :param value: 0.0-1.0
+    :param value: 100-0
     """
     try:
         global config
@@ -257,7 +244,7 @@ def stop():  # 强制结束线程
 
 def open_file():
     global play_num
-    file_types = [("Music file", "*.mp3")]
+    file_types = [("Music file", "*.mp3 *.flac *.wav *.ogg")]
 
     if not (path := tk.filedialog.askopenfilename(filetypes=file_types).replace('\\', '/')):
         return
@@ -298,30 +285,37 @@ def list_music():
     global music_list
     try:
         musics = [config["folder"] + '\\' + music for music in os.listdir(config["folder"]) if
-                  music.endswith(('.mp3', '.wav', '.ogg'))]
+                  music.endswith(('.mp3', '.wav', '.ogg', '.flac'))]
     except FileNotFoundError:
         return
 
     music_list.extend([i.replace('\\', '/') for i in musics])
 
 
-def search():
-    def _exit():
-        search_window.destroy()
+class Search:
+    def __init__(self):
+        self.search_var = None
+        self.search_entry = None
+        self.search_sc = None
+        self.search_window = None
+        self.search_lb = None
 
-    def not_fuzzywuzzy():
+    def _exit(self):
+        self.search_window.destroy()
+
+    def not_fuzzywuzzy(self):
         pass
 
-    def have_fuzzywuzzy(value: str):
+    def have_fuzzywuzzy(self, value: str):
         l = lb.get(0, tk.END)
         matches = process.extract(value, l, limit=len(l))  # 列出所有值的匹配度
-        search_var.set([i[0] for i2 in matches if (i := i2)[1] > 20])  # 列出匹配度大于20的项
+        self.search_var.set([i[0] for i2 in matches if (i := i2)[1] > 20])  # 列出匹配度大于20的项
 
-    def get_str():
-        have_fuzzywuzzy(search_entry.get())
+    def get_str(self):
+        self.have_fuzzywuzzy(self.search_entry.get())
 
-    def Press_the_button_Select1():
-        if tmp := search_lb.curselection():
+    def press_the_button_select1(self):
+        if tmp := self.search_lb.curselection():
             global play_num
             global music_list
             l = list(lb.get(0, tk.END))
@@ -330,50 +324,51 @@ def search():
             elif play_num == 0:
                 play_num = len(music_list)
 
-            remove_value = search_lb.get(tmp[0])
+            remove_value = self.search_lb.get(tmp[0])
             music_list.insert(play_num, music_list.pop(l.index(remove_value)))
             l.remove(remove_value)
-            l.insert(play_num, search_lb.get(tmp[0]))
+            l.insert(play_num, self.search_lb.get(tmp[0]))
 
             var2.set(l)
             root.update()
         return
 
-    def Press_the_button_Select2():
-        if tmp := search_lb.curselection():
+    def press_the_button_select2(self):
+        if tmp := self.search_lb.curselection():
             global play_num
-            key = search_lb.get(tmp[0])
+            key = self.search_lb.get(tmp[0])
             play_num = list(lb.get(0, tk.END)).index(key)
             if player_state is 0:
-                buttonPlayClick()
+                button_play_click()
             else:
-                buttonNextClick()
+                button_next_click()
         return
 
-    search_window = tk.Toplevel(root)
-    search_window.protocol('WM_DELETE_WINDOW', _exit)
-    search_window.title('search')
-    Select_fr = tk.Frame(search_window)
-    search_entry = tk.Entry(search_window)
-    search_btn = tk.Button(search_window, text="搜索", command=get_str)
-    Select1 = tk.Button(Select_fr, text="下一个播放", command=Press_the_button_Select1)
-    Select2 = tk.Button(Select_fr, text="现在 播放", command=Press_the_button_Select2)
-    search_var = tk.StringVar()
+    def main(self):
+        self.search_window = tk.Toplevel(root)
+        self.search_window.protocol('WM_DELETE_WINDOW', self._exit)
+        self.search_window.title('search')
+        select_fr = tk.Frame(self.search_window)
+        self.search_entry = tk.Entry(self.search_window)
+        search_btn = tk.Button(self.search_window, text="搜索", command=self.get_str)
+        select1 = tk.Button(select_fr, text="下一个播放", command=self.press_the_button_select1)
+        select2 = tk.Button(select_fr, text="现在 播放", command=self.press_the_button_select2)
+        self.search_var = tk.StringVar()
 
-    search_fr = tk.Frame(search_window)
-    search_sc = tkinter.Scrollbar(search_fr)
-    search_lb = tk.Listbox(search_fr, listvariable=search_var, yscrollcommand=sc.set)
-    search_sc.config(command=lb.yview)
-    Select1.grid(row=0, column=0)
-    Select2.grid(row=0, column=1)
+        search_fr = tk.Frame(self.search_window)
+        self.search_sc = tkinter.Scrollbar(search_fr)
+        self.search_lb = tk.Listbox(search_fr, listvariable=self.search_var, yscrollcommand=sc.set)
+        self.search_sc.config(command=lb.yview)
+        select1.grid(row=0, column=0)
+        select2.grid(row=0, column=1)
 
-    search_sc.pack(side=tkinter.LEFT, fill=tkinter.Y)
-    search_lb.pack(side=tkinter.RIGHT, fill=tk.Y)
+        self.search_sc.pack(side=tkinter.LEFT, fill=tkinter.Y)
+        self.search_lb.pack(side=tkinter.RIGHT, fill=tk.Y)
 
-    search_entry.pack(side=tk.TOP)
-    Select_fr.pack(side=tk.BOTTOM)
-    search_fr.pack(side=tk.BOTTOM)
-    search_btn.pack(side=tk.BOTTOM)
+        self.search_entry.pack(side=tk.TOP)
+        select_fr.pack(side=tk.BOTTOM)
+        search_fr.pack(side=tk.BOTTOM)
+        search_btn.pack(side=tk.BOTTOM)
 
 
 def load():
@@ -415,6 +410,7 @@ if __name__ == '__main__':
     config = {"volume_num": 50, "folder": '', "fadeout_time": 600, "music_list": []}
     now_music = ''
     lb = None
+    search = Search()
 
     event = Event()
     # 窗口关闭
@@ -438,15 +434,15 @@ if __name__ == '__main__':
 
     fr2 = tk.Frame(root, relief=tk.RAISED, bd=0)
     # 上一首
-    buttonPrev = tk.Button(fr2, image=go_start_image, width=60, command=buttonPrevClick)
+    buttonPrev = tk.Button(fr2, image=go_start_image, width=60, command=button_prev_click)
     buttonPrev.grid(row=0, column=0, sticky="ew", padx=60, pady=5)
     buttonPrev['state'] = 'disabled'
     # 播放
-    buttonPlay = tk.Button(fr2, image=play_image, width=60, command=buttonPlayClick)
+    buttonPlay = tk.Button(fr2, image=play_image, width=60, command=button_play_click)
     buttonPlay.grid(row=0, column=1, sticky="ew", padx=60, pady=5)
     buttonPlay['state'] = 'disabled'
     # 下一首
-    buttonNext = tk.Button(fr2, image=go_end_image, width=60, command=buttonNextClick)
+    buttonNext = tk.Button(fr2, image=go_end_image, width=60, command=button_next_click)
     buttonNext.grid(row=0, column=2, sticky="ew", padx=60, pady=5)
     buttonNext['state'] = 'disabled'
     # 设置
@@ -501,7 +497,7 @@ if __name__ == '__main__':
     menubar.add_cascade(label='文件', menu=file_menubar)
     # menubar.add_cascade(image="./lib/tmp.png", menu=search_menubar)
     # menubar.add_cascade(label="搜索", menu=search_menubar)
-    menubar.add_command(label="搜索", command=search)
+    menubar.add_command(label="搜索", command=search.main)
     file_menubar.add_command(label='打开文件', command=open_file)  # 打开单个音乐文件
     file_menubar.add_cascade(label='打开文件夹', menu=folder_menubar)  # 打开音乐文件夹
     # 单击打开文件夹
